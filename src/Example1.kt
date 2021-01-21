@@ -5,7 +5,7 @@ class Example1 {
 
 fun main() {
   var mas= arrayOfNulls<Int>(5)
-var result=sumArray(mas)
+var result=sumArray(mas)//sdfghjk
     var qwe:Int;
     val listWithNulls: MutableList<Int> = mutableListOf(4)
     listWithNulls.add(34)
