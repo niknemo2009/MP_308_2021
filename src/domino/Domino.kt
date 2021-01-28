@@ -1,6 +1,6 @@
 package domino
 
-class Domino(private var leftValue: Int, private var rightValue: Int) {
+class Domino(var leftValue: Int, var rightValue: Int) {
 
     fun isDouble(): Boolean {
         return leftValue == rightValue
@@ -12,6 +12,12 @@ class Domino(private var leftValue: Int, private var rightValue: Int) {
 
     fun getValue(): Int {
         return leftValue + rightValue
+    }
+
+    fun rotate180(){
+        val temp = leftValue
+        leftValue = rightValue
+        rightValue = temp
     }
 
 }

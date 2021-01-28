@@ -1,18 +1,33 @@
 package domino
 
-class Game(val players: List<Player>) {
+class Game(private val players: List<Player>) {
     private val bazaar = mutableListOf<Domino>()
+
+    //TODO change to list
+    private lateinit var dominoesOnTable: ArrayDeque<Domino>
     private var maxHandSize: Int = 0
+    private var playersScores: MutableMap<String, Int> = mutableMapOf()
+
+    init {
+        players.map {
+            playersScores.put(it.name, 0)
+        }
+        initDominoes()
+        dominoesOnTable = ArrayDeque(bazaar.size)
+        initPlayersHandsAutomatically()
+    }
 
     private var currentPlayer: Player? = null
+
     fun start() {
-        initDominoes()
-        initPlayersHandsAutomatically()
         for (player in players) {
             println(player)
         }
         initFirstPlayer()
-
+        firstStep()
+        for (player in players){
+            player.makeMove(this)
+        }
     }
 
     private fun initFirstPlayer() {
@@ -35,7 +50,7 @@ class Game(val players: List<Player>) {
 
         if (doubles.isNotEmpty()) {
             if (doubles.any { it.getValue() == 2 }) {
-                currentPlayer = getPlayerByDomino(doubles.first())
+                currentPlayer = getPlayerByDomino(doubles.first { it.getValue() == 2 })
                 // TODO remove println
                 println("double 1-1")
             } else {
@@ -51,6 +66,16 @@ class Game(val players: List<Player>) {
         }
         // TODO remove println
         println("currentPlayer:\t$currentPlayer")
+    }
+
+    private fun firstStep() {
+        // at this stage domino cannot be null
+        // but i don't wont to break the logic of the function
+        val domino = currentPlayer?.selectDominoFromHand()
+        if (domino != null) {
+            dominoesOnTable.addFirst(domino)
+            currentPlayer?.hand?.remove(domino)
+        }
     }
 
     private fun getPlayerByDomino(domino: Domino): Player? {
@@ -106,6 +131,34 @@ class Game(val players: List<Player>) {
         bazaar.shuffle()
     }
 
+    fun getAbleDominoesIndexes(dominoes: List<Domino>): Map<String, ArrayList<Int>> {
+        val leftDominoValue = dominoesOnTable.first().leftValue
+        val rightDominoValue = dominoesOnTable.last().rightValue
+        val resultMap = mutableMapOf(
+                "left" to arrayListOf<Int>(),
+                "right" to arrayListOf())
+
+        dominoes.forEachIndexed { i, domino ->
+            if (domino.leftValue == leftDominoValue || domino.rightValue == leftDominoValue) {
+                resultMap["left"]?.add(i)
+            }
+            if (domino.leftValue == rightDominoValue || domino.rightValue == rightDominoValue) {
+                resultMap["right"]?.add(i)
+            }
+        }
+        return resultMap
+    }
+
+    fun getDominoFromBazaar(): Domino {
+        // bazaar must be shuffled
+        return bazaar[0]
+    }
+    fun addDominoToTableLeft(domino: Domino){
+        dominoesOnTable.addFirst(domino)
+    }
+    fun addDominoToTableRight(domino: Domino){
+        dominoesOnTable.addLast(domino)
+    }
 }
 
 fun main() {
