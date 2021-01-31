@@ -4,7 +4,7 @@ class Game(private val players: List<Player>) {
     private val bazaar = mutableListOf<Domino>()
 
     //TODO change to list
-    private lateinit var dominoesOnTable: ArrayDeque<Domino>
+    lateinit var dominoesOnTable: ArrayDeque<Domino>
     private var maxHandSize: Int = 0
     private var playersScores: MutableMap<String, Int> = mutableMapOf()
 
@@ -25,9 +25,12 @@ class Game(private val players: List<Player>) {
         }
         initFirstPlayer()
         firstStep()
-        for (player in players){
+        for (player in players) {
+            println("===========================================================================")
+            println("Player:\t$player")
             player.makeMove(this)
         }
+        println(dominoesOnTable)
     }
 
     private fun initFirstPlayer() {
@@ -153,10 +156,16 @@ class Game(private val players: List<Player>) {
         // bazaar must be shuffled
         return bazaar[0]
     }
-    fun addDominoToTableLeft(domino: Domino){
+
+    fun addDominoToTableLeft(domino: Domino) {
+        if (domino.rightValue != dominoesOnTable.first().leftValue)
+            domino.rotate180()
         dominoesOnTable.addFirst(domino)
     }
-    fun addDominoToTableRight(domino: Domino){
+
+    fun addDominoToTableRight(domino: Domino) {
+        if (domino.leftValue != dominoesOnTable.last().rightValue)
+            domino.rotate180()
         dominoesOnTable.addLast(domino)
     }
 }
@@ -168,6 +177,5 @@ fun main() {
             Player("Maxxxtentacion"),
             Player("Antonio")
     ))
-
     game.start()
 }
