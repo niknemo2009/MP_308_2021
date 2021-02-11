@@ -3,9 +3,9 @@ package Domino
 import java.util.*
 
 fun main() {
-    var player1 = Player("Іван")
-    var player2 = Player("Микола")
-    var player3 = Player("Петро")
+    var player1 = Player("Ірина")
+    var player2 = Player("Юлія")
+    var player3 = Player("Олена")
     var player4 = Player("Аліна")
 
     var players = mutableListOf<Player>(player1, player2, player3, player4)
@@ -13,40 +13,49 @@ fun main() {
 
     game.start()
 }
+/*
+                        ПРАВИЛА ГРИ(SCOPE):
+* 1. Кожному з 4 гравців роздається по 5 фішок.
+* 2. Перший крок робить гравець, що має максимальний дубль(6:6, потім 5:5 і т.д). Якщо дублів немає,
+* то перший крок робить гравець з фішкою, що має максимальне значення. Далі гравці ходять по черзі(за індексом в масиві players).
+* 3. Якщо у гравця немає фішки, яку можна було б покласти на стіл з лівого чи правого краю, то він може брати необмежену кількість
+* фішок з резерву, поки випадково не витягне потрібну.
+* 4. Гра закінчується тоді, коли в одного з учасників більше немає фішок або коли вичерпано резерв(РИБА)
+* 5. Переміг той гравець, у якого взагалі немає фішок або кількість очків МІНІМАЛЬНА(якщо гра закінчена через вичерпаний резерв).
+* Тобто у грі є лише один "раунд". Гравці НЕ будуть грати до 100 очків!!!
+* 6. Кількість очків рахується як сума значень всіх фішок, що залишились у гравця.
+* 7. Значення фішки - сума її лівої та правої сторони.
+* */
+class Game(private val players:List<Player>) {
+    // Всі фішки
+    private val reserve = mutableListOf<Domino>()
 
-class Game(val players:List<Player>) {
-    val reserve = mutableListOf<Domino>()// фішки
-    var table = ArrayDeque<GameStep>()// хто грав якими фішками та у якому порядку
-    var currentPlayer = -1// поточний гравець
-    var steps = 1// номер поточного кроку у грі
+    // Хто грав якими фішками та у якому порядку ці фішки лежать на столі
+    private var table = ArrayDeque<GameStep>()
 
+    // Поточний гравець
+    private var currentPlayer = -1
+
+    // Номер поточного кроку у грі
+    private var steps = 1
+
+    // СТАРТ ГРИ
     fun start(){
-        // Генерація всіх фішок
+        // Ініціалізація всіх об'єктів, потрібних для початку гри
         initReserve()
-
-        // Роздати гравцям випадкові фішки
         initPlayer()
+        printInitInfo()
 
-        print("Гравці та їх фішки на початку гри:\n")
-        for(player in players){
-            print("\t$player\n")
-        }
-
-        // Обрати першого гравця, першу фішку та здійснити перший крок за правилами гри
+        // Зробити перший крок та почати гру
         firstStep()
-
-        // Почати гру
         play()
 
-        print("\nХід гри(розкладені фішки, гравець(який додав фішку) і крок(на якому додали фішку):\n")
-        for(domino in table){
-            print("\t$domino\n")
-        }
-
-        print("\nГравці та їх фішки в кінці гри:\n")
-        findWinner()
+        // Результати гри
+        getResult()
     }
 
+    //------------ІНІЦІАЛІЗАЦІЯ ГРИ----------------
+    // ГЕНЕРАЦІЯ ВСІХ ФІШОК
     private fun initReserve() {
         for (i in 0..6){
             for (j in i..6){
@@ -57,6 +66,7 @@ class Game(val players:List<Player>) {
         reserve.shuffle()
     }
 
+    // РОЗДАТИ ГРАВЦЯМ ВИПАДКОВІ ФІШКИ
     private fun initPlayer() {
         for (player in players){
             for (i in 0..4){
@@ -65,9 +75,10 @@ class Game(val players:List<Player>) {
         }
     }
 
+    // ВИДАТИ ГРАВЦЮ ФІШКУ З РЕЗЕРВУ ТА З'ЯСУВАТИ, ЧИ НЕ ПУСТИЙ РЕЗЕРВ
     private fun getDomino(player: Player):Boolean{
         if(reserve.isNotEmpty()){
-            player.dominos.add(reserve.get(0))
+            player.dominoes.add(reserve.get(0))
             reserve.removeAt(0)
 
             return true
@@ -75,12 +86,13 @@ class Game(val players:List<Player>) {
         return false
     }
 
+    // ОБРАТИ ПЕРШОГО ГРАВЦЯ, ПЕРШУ ФІШКУ ТА ЗДІЙСНИТИ ПЕРШИЙ КРОК ЗА ПРАВИЛАМИ ГРИ
     private fun firstStep() {
         // Перший гравець
-        var firstPlayer:Player
+        val firstPlayer:Player
 
         // Перша фішка
-        var firstDomino:Domino
+        val firstDomino:Domino
 
         // У кого з гравців є дублі(6:6, 5:5 і т.д.)
         val doublesPlayers = doublesPlayers()
@@ -102,6 +114,7 @@ class Game(val players:List<Player>) {
         nextStep(firstPlayer, firstDomino, true)
     }
 
+    // ЗНАЙТИ ГРАВЦІВ, У ЯКИХ Є ДУБЛІ
     private fun doublesPlayers():MutableList<Player>{
         val doublesPlayers = mutableListOf<Player>()
 
@@ -114,6 +127,7 @@ class Game(val players:List<Player>) {
         return doublesPlayers
     }
 
+    // ЗНАЙТИ ГРАВЦЯ, ЯКИЙ МАЄ МАКСИМАЛЬНИЙ ДУБЛЬ
     private fun firstByDoubles(doublesPlayers:MutableList<Player>):Player{
         var firstPlayerByDouble = doublesPlayers[0]
 
@@ -126,6 +140,7 @@ class Game(val players:List<Player>) {
         return firstPlayerByDouble
     }
 
+    // ЗНАЙТИ ГРАВЦЯ, У ЯКОГО Є ФІШКА З МАКСИМАЛЬНИМ ЗНАЧЕННЯМ
     private fun firstByMaxDomino():Player{
         var firstPlayer = players[0]
 
@@ -138,9 +153,59 @@ class Game(val players:List<Player>) {
         return firstPlayer
     }
 
+    // РОЗДРУКУВАТИ ІНФОРМАЦІЮ ПРО ПОЧАТКОВІ УМОВИ ГРИ
+    private fun printInitInfo(){
+        //Інформація про гравців на початку гри
+        print("ГРАВЦІ ТА ЇХ ФІШКИ НА ПОЧАТКУ ГРИ:\n")
+        players.onEach { print("\t$it\n") }
+
+        //Інформація про резерв на початку гри
+        print("\nРЕЗЕРВ НА ПОЧАТКУ ГРИ:\n\t")
+        reserve.onEach { print("$it") }
+    }
+
+    //--------ХІД ГРИ------------
+    // ГРА(РЕКУРСИВНА ФУНКЦІЯ)
+    private fun play(){
+        // Поточний гравець
+        val player = players[currentPlayer]
+
+        // Якщо у когось з гравців закінчилися фішки, то завершити гру
+        players.onEach { if(it.dominoes.isEmpty()) return }
+
+        // Фішка гравця, яку можна покласти на стіл до лівої фішки з краю
+        val suitableDominoLeft = player.addDominoToLeft(table.first.domino)
+
+        if(suitableDominoLeft == null){ // Якщо нічого не можна покласти з лівої сторони, то перевірити праву сторону
+            // Фішка гравця, яку можна покласти на стіл до правої фішки з краю
+            val suitableDominoRight = player.addDominoToRight(table.last.domino)
+
+            when {
+                suitableDominoRight != null -> {
+                    // Якщо знайдено необхідну фішку, то зробити крок цією фішкою та продовжити гру
+                    nextStep(player, suitableDominoRight, true)
+                    return play()
+                }
+                getDomino(player) -> {
+                    // Якщо не можна зробити крок, то взяти одну випадкову фішку з резерву та продовжити гру
+                    return play()
+                }
+                else -> {
+                    // Резерв вичерпано - ГРА ЗАВЕРШЕНА
+                    return
+                }
+            }
+        }else{
+            // Якщо знайдено необхідну фішку, то зробити крок цією фішкою та продовжити гру
+            nextStep(player, suitableDominoLeft, false)
+            return play()
+        }
+    }
+
+    // ЗДІЙСНИТИ НАСТУПНИЙ КРОК
     private fun nextStep(player: Player, domino: Domino, toRight:Boolean){
         // Забрати ту фішку, якою ходить гравець
-        player.dominos.remove(domino)
+        player.dominoes.remove(domino)
 
         if(toRight){
             // "Покласти" забрану фішку на "стіл" З ПРАВОЇ СТОРОНИ
@@ -157,6 +222,7 @@ class Game(val players:List<Player>) {
         nextPlayer()
     }
 
+    // З'ЯСУВАТИ, ХТО МАЄ ЗРОБИТИ КРОК
     private fun nextPlayer(){
         if(currentPlayer + 1 < players.size){
             currentPlayer++
@@ -165,65 +231,48 @@ class Game(val players:List<Player>) {
         }
     }
 
-    private fun play(){
-        val player = players[currentPlayer]// поточний гравець
+    //--------ЗАВЕРШЕННЯ ГРИ------------
+    // ВИВЕСТИ РЕЗУЛЬТАТИ ГРИ
+    private fun getResult(){
+        // Інформація про фішки на столі
+        print("\n\nСТІЛ:\n\t")
+        table.onEach { print("${it.domino}") }
 
-        val currentLeft:Domino// фішка з лівого краю
-        val currentRight:Domino// фішка з правого краю
-        var suitableDominoLeft:Domino// фішка гравця, яку можна додати до лівої фішки з краю
-        var suitableDominoRight:Domino// фішка гравця, яку можна додати до правої фішки з краю
-
-        // Грати, поки в жодного з гравців не закінчилися фішки
-        if(player.dominos.isNotEmpty()){
-            suitableDominoLeft = Domino()
-            currentLeft = table.first.domino()
-
-            suitableDominoRight = Domino()
-            currentRight = table.last.domino()
-
-            for(domino in player.dominos){
-                if(domino.rightValue == currentLeft.leftValue){
-                    suitableDominoLeft = domino
-                    break
-                }else if(domino.leftValue == currentRight.rightValue){
-                    suitableDominoRight = domino
-                    break
-                }
-            }
-
-            if(suitableDominoLeft.isNotEmpty()){
-                nextStep(player, suitableDominoLeft, false)
-                return play()
-            }
-            else if(suitableDominoRight.isNotEmpty()){
-                nextStep(player, suitableDominoRight, true)
-                return play()
-            }
-            else{
-                // Грати, поки в резерві не закінчилися фішки
-                if(getDomino(player)){
-                    return play()
-                }else{
-                    return// в резерві закінчилися фішки
-                }
-            }
+        // Інформація про резерв
+        print("\n\nРЕЗЕРВ В КІНЦІ ГРИ:\n\t")
+        if(reserve.isEmpty()){
+            print("РИБА!")
+        }else{
+            reserve.onEach { print(it) }
         }
-        else{
-            return// у гравця закінчилися фішки
-        }
+
+        // Інформація про переможця
+        findWinner()
+
+        // Інформація про всіх гравців
+        print("\n\nФІШКИ, ЯКІ ЗАЛИШИЛИСЬ У ГРАВЦІВ В КІНЦІ ГРИ:\n")
+        players.onEach { print("\t$it\n") }
+
+        // Історія гри
+        print("\nІСТОРІЯ ГРИ(РОЗКЛАДЕНІ ФІШКИ, ГРАВЕЦЬ(ЯКИЙ ДОДАВ ФІШКУ) І КРОК(НА ЯКОМУ ДОДАЛИ ФІШКУ):\n")
+        table.onEach { print("\t$it\n") }
     }
 
+    // ВИЗНАЧИТИ ПЕРЕМОЖЦЯ
     private fun findWinner(){
         var winner = players[0]
 
         for(player in players){
-            print("\t$player - ${player.totalScore()} балів\n")
-
-            if(player.totalScore() < winner.totalScore()){
+            if(player.dominoes.isEmpty()){
+                // Переможець не має жодних фішок
+                winner = player
+                break
+            }else if(player.totalScore() < winner.totalScore()){
+                // Переможець має МІНІМАЛЬНУ кількість очків(у випадку РИБИ)
                 winner = player
             }
         }
 
-        print("\nПЕРЕМОЖЕЦЬ: ${winner.name}")
+        print("\n\nПЕРЕМОЖЕЦЬ:\n\t${winner.name}")
     }
 }

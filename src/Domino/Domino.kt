@@ -1,22 +1,22 @@
 package Domino
 
-class Domino(val leftValue:Int, val rightValue:Int) {
-    // Для створення пустого об'єкта
-    constructor() : this(-1, -1) {}
-
-    override fun toString(): String {
-        return "| $leftValue : $rightValue |"
-    }
-
+class Domino(var leftValue:Int, var rightValue:Int) {
+    // Значення фішки
     fun totalValue():Int{
         return  leftValue + rightValue
     }
 
+    // Чи дорівнює ліва і права частина доміно(дубль)
     fun isDouble():Boolean{
         return leftValue == rightValue
     }
 
-    fun isNotEmpty():Boolean{
-        return leftValue != -1 && rightValue != -1
+    // Повернути доміно на 180 градусів
+    fun rotate(){
+        leftValue = rightValue.also { rightValue = leftValue }
+    }
+
+    override fun toString(): String {
+        return "| $leftValue : $rightValue |"
     }
 }
