@@ -1,12 +1,14 @@
 package domino
 
+import java.nio.charset.CharacterCodingException
+import kotlin.reflect.typeOf
+
 class Game(private val players: List<Player>) {
     private val bazaar = mutableListOf<Domino>()
-
-    //TODO change to list
-    lateinit var dominoesOnTable: ArrayDeque<Domino>
+    private var dominoesOnTable: ArrayDeque<Domino>
     private var maxHandSize: Int = 0
     private var playersScores: MutableMap<String, Int> = mutableMapOf()
+    private val currentPlayer: Player? = null
 
     init {
         players.map {
@@ -17,23 +19,28 @@ class Game(private val players: List<Player>) {
         initPlayersHandsAutomatically()
     }
 
-    private var currentPlayer: Player? = null
-
     fun start() {
-        for (player in players) {
-            println(player)
-        }
-        initFirstPlayer()
         firstStep()
-        for (player in players) {
-            println("===========================================================================")
-            println("Player:\t$player")
-            player.makeMove(this)
+
+        var missedMoves = 0
+        while (missedMoves != players.size) {
+            missedMoves = 0
+            for (player in players) {
+                print("\n\n")
+                println("%-18s-\t$dominoesOnTable".format("Dominoes on table"))
+                println("%-18s-\t${player.name}".format("Current Player"))
+                println("%-18s-\t${player.hand}".format("Your hand"))
+                if (!player.makeMove(this)) {
+                    if (player.hand.size == 0){
+                        finishRound(player)
+                    }
+                    missedMoves += 1
+                }
+            }
         }
-        println(dominoesOnTable)
     }
 
-    private fun initFirstPlayer() {
+    private fun getFirstPlayer(): Player? {
         var handsDominoes = mutableListOf<Domino>()
         var doubles = mutableListOf<Domino>()
 
@@ -42,7 +49,6 @@ class Game(private val players: List<Player>) {
                 handsDominoes.add(it)
             }
         }
-        // divide to doubles and not
         handsDominoes.filterTo(doubles) {
             it.isDouble()
         }
@@ -51,33 +57,28 @@ class Game(private val players: List<Player>) {
         // remove [0,0] domino
         doubles = doubles.filter { it.getValue() != 0 }.toMutableList()
 
-        if (doubles.isNotEmpty()) {
+        return if (doubles.isNotEmpty()) {
             if (doubles.any { it.getValue() == 2 }) {
-                currentPlayer = getPlayerByDomino(doubles.first { it.getValue() == 2 })
-                // TODO remove println
-                println("double 1-1")
+                getPlayerByDomino(doubles.first { it.getValue() == 2 })
             } else {
                 val maxDoubleValue: Int = doubles.maxOf { it.getValue() }
-                currentPlayer = getPlayerByDomino(doubles.first { it.getValue() == maxDoubleValue })
-                // TODO remove println
-                println("double $maxDoubleValue")
+                getPlayerByDomino(doubles.first { it.getValue() == maxDoubleValue })
             }
         } else {
             val minDominoValue = handsDominoes.minOf { it.getValue() }
-            currentPlayer = getPlayerByDomino(handsDominoes.first { it.getValue() == minDominoValue })
-            println(handsDominoes)
+            getPlayerByDomino(handsDominoes.first { it.getValue() == minDominoValue })
         }
-        // TODO remove println
-        println("currentPlayer:\t$currentPlayer")
     }
 
     private fun firstStep() {
+        val firstPlayer = getFirstPlayer()
+        println("Hello, ${firstPlayer?.name}, you go first")
         // at this stage domino cannot be null
         // but i don't wont to break the logic of the function
-        val domino = currentPlayer?.selectDominoFromHand()
+        val domino = firstPlayer?.selectDominoFromHand()
         if (domino != null) {
             dominoesOnTable.addFirst(domino)
-            currentPlayer?.hand?.remove(domino)
+            firstPlayer.hand.remove(domino)
         }
     }
 
@@ -152,9 +153,13 @@ class Game(private val players: List<Player>) {
         return resultMap
     }
 
-    fun getDominoFromBazaar(): Domino {
+    fun getDominoFromBazaar(): Domino? {
         // bazaar must be shuffled
-        return bazaar[0]
+        if (bazaar.size != 0) {
+            return bazaar.removeAt(0)
+        }
+        println("Bazaar is empty")
+        return null
     }
 
     fun addDominoToTableLeft(domino: Domino) {
@@ -168,8 +173,13 @@ class Game(private val players: List<Player>) {
             domino.rotate180()
         dominoesOnTable.addLast(domino)
     }
-}
 
+    fun finishRound(winner: Player){
+        for (player in players){
+
+        }
+    }
+}
 fun main() {
     val game = Game(listOf(
             Player("VladIsLove"),
