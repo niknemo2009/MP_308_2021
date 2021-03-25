@@ -46,9 +46,11 @@ fun findQuantityOfWords(word1: String, word2: String): Int{
         // "Написати" слово, прибираючі символи з source
         source.onEach {
             if(destination.contains(it.key)){
-                val newQuantity = it.value - destination.get(it.key) as Int
-                source.put(it.key, newQuantity)
-                letters++
+                val newQuantity  = it.value - destination.get(it.key) as Int
+                if(newQuantity >= 0){
+                    source.put(it.key, newQuantity)
+                    letters++
+                }
             }
         }
 
@@ -83,7 +85,7 @@ fun letters(word: String):MutableMap<Char, Int>{
 // Чи всі символи доступні?
 fun allSymbolsPresent(symbols: MutableMap<Char, Int>):Boolean{
     for(pair in symbols){
-        if(pair.value == 0) return false
+        if(pair.value <= 0) return false
     }
 
     return true
